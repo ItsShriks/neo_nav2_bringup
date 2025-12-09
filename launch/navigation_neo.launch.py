@@ -12,17 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Contributor: Adarsh Karan K P
+
 import os
 
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable, GroupAction
+from launch.actions import DeclareLaunchArgument, GroupAction, GroupAction, IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PythonExpression
-from launch_ros.actions import Node
-from launch_ros.actions import LoadComposableNodes
-from launch_ros.descriptions import ComposableNode
+from launch_ros.actions import Node, SetParameter
+from launch_ros.descriptions import ParameterFile
 from nav2_common.launch import RewrittenYaml
 
 def generate_launch_description():
@@ -34,6 +36,7 @@ def generate_launch_description():
     autostart = LaunchConfiguration('autostart')
     params_file = LaunchConfiguration('params_file')
     use_multi_robots = LaunchConfiguration('use_multi_robots')
+    use_rviz = LaunchConfiguration('use_rviz')
 
     lifecycle_nodes = ['controller_server',
                        'planner_server',
@@ -48,11 +51,13 @@ def generate_launch_description():
         'use_sim_time': use_sim_time,
         'autostart': autostart}
 
-    configured_params = RewrittenYaml(
+    configured_params = ParameterFile(
+        RewrittenYaml(
             source_file=params_file,
             root_key=namespace,
             param_rewrites=param_substitutions,
-            convert_types=True)
+            convert_types=True),
+        allow_substs=True)
 
     declare_namespace_cmd = DeclareLaunchArgument(
         'namespace',
@@ -76,10 +81,15 @@ def generate_launch_description():
     declare_use_multi_robots_cmd =  DeclareLaunchArgument(
         'use_multi_robots', default_value='False',
         description='A flag to remove the remappings')
-
+    
+    declare_use_rviz_cmd = DeclareLaunchArgument(
+        'use_rviz', default_value='True',
+        description='Launch RViz for visualization'
+        )
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(['not ', use_multi_robots])),
         actions=[
+            SetParameter('use_sim_time', use_sim_time),
             Node(
                 package='nav2_controller',
                 executable='controller_server',
@@ -128,6 +138,7 @@ def generate_launch_description():
     load_nodes_multi_robot = GroupAction(
         condition=IfCondition(use_multi_robots),
         actions=[
+            SetParameter('use_sim_time', use_sim_time),
             Node(
                 package='nav2_controller',
                 executable='controller_server',
@@ -168,6 +179,18 @@ def generate_launch_description():
         ]
     )
 
+    # Start RViz if use_rviz is True
+    start_rviz = IncludeLaunchDescription(
+        condition=IfCondition(use_rviz),
+        launch_description_source=PythonLaunchDescriptionSource(
+            [bringup_dir, '/launch/rviz_launch.py']),
+        launch_arguments={
+            'namespace': namespace,
+            'use_namespace': use_multi_robots,
+            'use_sim_time': use_sim_time,
+            'rviz_output': 'log',
+        }.items(),
+    )
     # Create the launch description and populate
     ld = LaunchDescription()
 
@@ -177,9 +200,10 @@ def generate_launch_description():
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_use_multi_robots_cmd)
-
+    ld.add_action(declare_use_rviz_cmd)
     # Add the actions to launch all of the navigation nodes
     ld.add_action(load_nodes)
     ld.add_action(load_nodes_multi_robot)
+    ld.add_action(start_rviz)
 
     return ld

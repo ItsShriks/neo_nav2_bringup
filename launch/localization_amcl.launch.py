@@ -101,6 +101,12 @@ def generate_launch_description():
     ld = LaunchDescription()
 
     # Declare the launch options
+    declare_namespace_arg = DeclareLaunchArgument(
+        'namespace',
+        default_value='',
+        description='Top-level namespace'
+    )
+    ld.add_action(declare_namespace_arg)
     ld.add_action(load_nodes)
     ld.add_action(load_nodes_multi_robot)
     

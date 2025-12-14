@@ -18,7 +18,9 @@ def generate_launch_description():
             'my_robot': 'mmo_700',
             'world': 'neo_workshop',
             'use_sim_time': 'true',
-            'arm_type': 'ur5e'
+            'arm_type': 'ur5e',
+            'include_pan_tilt': 'true'
+            
         }.items()
     )
 

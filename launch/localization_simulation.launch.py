@@ -25,7 +25,8 @@ def generate_launch_description():
             'my_robot': 'mmo_700',
             'world': 'neo_workshop',
             'use_sim_time': 'true',
-            'arm_type': 'ur5e'
+            'arm_type': 'ur5e',
+            'include_pan_tilt': 'true'
         }.items()
     )
 
@@ -44,5 +45,6 @@ def generate_launch_description():
     ld.add_action(declare_map_arg)
     ld.add_action(simulation_launch)
     ld.add_action(localization_launch)
+    
 
     return ld

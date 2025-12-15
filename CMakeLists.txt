@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(neo_nav2_bringup)
 
 find_package(ament_cmake REQUIRED)
-find_package(navigation2 REQUIRED)
+
 find_package(nav2_map_server REQUIRED)
 find_package(nav2_amcl REQUIRED)
 find_package(nav2_controller REQUIRED)

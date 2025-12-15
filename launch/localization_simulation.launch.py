@@ -12,7 +12,7 @@ def generate_launch_description():
     # Declare map argument
     declare_map_arg = DeclareLaunchArgument(
         'map',
-        default_value=os.path.join(get_package_share_directory('neo_simulation2'), 'maps', 'neo_track1.yaml'),
+        default_value=os.path.join(get_package_share_directory('neo_simulation2'), 'maps', 'neo_workshop.yaml'),
         description='Full path to map yaml file to load'
     )
 
@@ -42,9 +42,22 @@ def generate_launch_description():
         }.items()
     )
 
+    # Launch Navigation
+    navigation_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('neo_nav2_bringup'), 'launch', 'navigation_neo.launch.py')
+        ),
+        launch_arguments={
+            'use_sim_time': 'true',
+            'params_file': os.path.join(get_package_share_directory('neo_nav2_bringup'), 'config', 'navigation.yaml'),
+            'use_rviz': 'False'
+        }.items()
+    )
+
     ld.add_action(declare_map_arg)
     ld.add_action(simulation_launch)
     ld.add_action(localization_launch)
+    ld.add_action(navigation_launch)
     
 
     return ld

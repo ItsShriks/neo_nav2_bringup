@@ -13,7 +13,7 @@ amcl:
     do_beamskip: false
     global_frame_id: "map"
     lambda_short: 0.1
-    set_initial_pose: true
+    set_initial_pose: false
     laser_likelihood_max_dist: 2.0
     laser_max_range: -1.0
     laser_min_range: -1.0
@@ -31,7 +31,8 @@ amcl:
     save_pose_rate: 0.5
     sigma_hit: 0.2
     tf_broadcast: true
-    transform_tolerance: 1.0
+    transform_tolerance: 2.0
+    message_filter_queue_size: 100
     scan_topic: /lidar_1/scan
     update_min_a: 0.2
     update_min_d: 0.2

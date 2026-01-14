@@ -1,0 +1,52 @@
+# Joystick configuration for Logitech controller
+# This config is for teleop_twist_joy package
+
+# Axis mappings (adjust based on your specific Logitech model)
+# Standard Logitech gamepad layout:
+# - Left stick: axes 0 (left/right), 1 (up/down)
+# - Right stick: axes 2 (left/right), 3 (up/down)
+# - Triggers: axes 4 (left), 5 (right)
+
+teleop_twist_joy_node:
+  ros__parameters:
+    # Axis for linear velocity (forward/backward)
+    # Left stick up/down
+    axis_linear:
+      x: 1
+    
+    # Scale for linear velocity (m/s)
+    scale_linear:
+      x: 0.5
+    
+    # Invert linear axis if needed
+    scale_linear_turbo:
+      x: 1.0
+    
+    # Axis for angular velocity (rotation)
+    # Left stick left/right
+    axis_angular:
+      yaw: 0
+    
+    # Scale for angular velocity (rad/s)
+    scale_angular:
+      yaw: 0.5
+    
+    scale_angular_turbo:
+      yaw: 1.0
+    
+    # Enable button (must be held to move robot)
+    # Button 4 (LB on Xbox-style controllers)
+    enable_button: 4
+    
+    # Turbo button (hold for faster movement)
+    # Button 5 (RB on Xbox-style controllers)
+    enable_turbo_button: 5
+    
+    # Require enable button to be held
+    require_enable_button: true
+    
+    # Publishing rate
+    publish_stamped_twist: false
+    
+    # Inverted axes (set to true if movement is reversed)
+    inverted_reverse: false

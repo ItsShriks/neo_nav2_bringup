@@ -14,19 +14,183 @@ Official documentation: https://neobotix-docs.de/ros/packages/neo_nav2_bringup.h
 
 ---
 
-## Simulation Launch Files
+## How to Run the Simulation
 
-### Localization (Simulation)
+### 1. Clone the repository (with submodules)
+```bash
+git clone --recurse-submodules git@gitlab.igg.uni-bonn.de:hrl_students/ws2526_butler/steve_ros2_ws.git -b dev
+```
+
+### 2. Build the workspace
+```bash
+source /opt/ros/humble/setup.bash
+colcon build --symlink-install --packages-select neo_simulation2 neo_nav2_bringup
+```
+
+### 3. Source the workspace
+```bash
+source install/setup.bash
+```
+
+### 4. Launch the simulation
+Basic launch:
+```bash
+ros2 launch neo_simulation2 simulation.launch.py
+```
+
+### 5. Navigation and Mapping
+
+We provide multiple launch files for different use cases:
+
+#### Quick Start: Full Navigation Stack (Recommended)
+Launch everything (simulation + localization + navigation) with a single command:
 ```bash
 ros2 launch neo_nav2_bringup localization_simulation.launch.py
 ```
-Launches Gazebo simulation + AMCL localization + Nav2 navigation.
 
-### SLAM (Simulation)
+This automatically starts:
+- Gazebo simulation with MMO-700 robot (UR5e arm + pan-tilt camera)
+- AMCL localization with pre-built map
+- Nav2 autonomous navigation stack
+- RViz for visualization
+
+**Using a custom map:**
+```bash
+ros2 launch neo_nav2_bringup localization_simulation.launch.py map:=/path/to/your/map.yaml
+```
+
+**Using a different world:**
+```bash
+ros2 launch neo_nav2_bringup localization_simulation.launch.py world:=neo_track1
+```
+
+**Using custom world and map:**
+```bash
+ros2 launch neo_nav2_bringup localization_simulation.launch.py \
+  world:=/path/to/custom.world \
+  map:=/path/to/custom_map.yaml
+```
+
+#### Alternative: SLAM Mapping (Build Your Own Map)
+
+If you want to create a new map instead of using a pre-built one:
 ```bash
 ros2 launch neo_nav2_bringup slam_simulation.launch.py
 ```
-Launches Gazebo simulation + SLAM for map building.
+
+**Using a different world for SLAM:**
+```bash
+ros2 launch neo_nav2_bringup slam_simulation.launch.py world:=neo_track1
+```
+
+Then in a **separate terminal**, launch navigation:
+```bash
+source install/setup.bash
+ros2 launch neo_nav2_bringup navigation_neo.launch.py use_sim_time:=true use_rviz:=false
+```
+
+This starts:
+- Gazebo simulation with MMO-700 robot
+- SLAM Toolbox for real-time mapping
+- Nav2 for autonomous navigation
+
+#### Using the Navigation Stack
+
+1. **Wait for all nodes to start** (you'll see "Managed nodes are active" in the terminal)
+2. **In RViz**, use the **2D Nav Goal** tool to set navigation goals
+3. **Click and drag** on the map to set the goal pose
+4. The robot will **autonomously navigate** to the goal, avoiding obstacles
+
+**Note:** Navigation goals must be set within the mapped area (visible in RViz as colored regions).
+
+#### Available Worlds
+
+The simulation supports the following Gazebo worlds:
+- `small_house` (default) - AWS RoboMaker small house environment
+- `neo_workshop` - Indoor workshop environment
+- `neo_track1` - Outdoor track environment  
+- Custom worlds - Provide full path to your `.world` file
+
+> **Tip:** When using a custom world with localization, ensure you have a corresponding map file.
+
+---
+
+## Programmatic Navigation (Nav2Navigator)
+
+Send navigation goals programmatically via command line or Python API.
+
+### Command-Line Usage
+
+```bash
+# Navigate to specific coordinates (x, y, yaw in radians)
+ros2 run neo_nav2_bringup nav2_navigator.py --x 2.0 --y 1.5 --yaw 1.57
+
+# Navigate to origin
+ros2 run neo_nav2_bringup nav2_navigator.py --x 0.0 --y 0.0 --yaw 0.0
+
+# Non-blocking mode (send goal and return immediately)
+ros2 run neo_nav2_bringup nav2_navigator.py --x 3.0 --y 2.0 --yaw 0.0 --no-wait
+
+# Use degrees with convenience script
+./src/neo_nav2_bringup/scripts/send_nav_goal.sh 2.0 1.5 90
+```
+
+### Python API Usage
+
+```python
+#!/usr/bin/env python3
+import rclpy
+from nav2_navigator import Nav2Navigator
+
+rclpy.init()
+navigator = Nav2Navigator()
+
+if navigator.wait_for_server(10.0):
+    # Send navigation goal
+    navigator.go_to_pose(
+        x=2.0,      # meters
+        y=1.5,      # meters
+        yaw=1.57,   # radians (90 degrees)
+        frame_id="map",
+        wait=True   # Block until completion
+    )
+
+navigator.destroy_node()
+rclpy.shutdown()
+```
+
+### Scene Graph Integration Example
+
+Perfect for semantic navigation systems:
+
+```python
+SCENE_GRAPH = {
+    "kitchen": {"x": 3.5, "y": 2.0, "yaw": 1.57},
+    "living_room": {"x": 1.0, "y": 1.0, "yaw": 0.0},
+}
+
+def navigate_to_location(location_name: str):
+    pose = SCENE_GRAPH[location_name]
+    cmd = [
+        "ros2", "run", "neo_nav2_bringup", "nav2_navigator.py",
+        "--x", str(pose["x"]),
+        "--y", str(pose["y"]),
+        "--yaw", str(pose["yaw"])
+    ]
+    subprocess.run(cmd)
+
+navigate_to_location("kitchen")
+```
+
+**Command-Line Arguments:**
+
+| Argument | Type | Default | Description |
+|----------|------|---------|-------------|
+| `--x` | float | 1.0 | Target X coordinate (meters) |
+| `--y` | float | 0.0 | Target Y coordinate (meters) |
+| `--yaw` | float | 0.0 | Target yaw angle (radians) |
+| `--frame` | string | "map" | Reference frame |
+| `--no-wait` | flag | False | Non-blocking mode |
 
 ---
 
@@ -87,7 +251,7 @@ Launches only joystick control (when robot is already running).
    ros2 launch neo_nav2_bringup localization_simulation.launch.py
    ```
 2. Set initial pose in RViz (2D Pose Estimate)
-3. Send navigation goals (2D Nav Goal)
+3. Send navigation goals (2D Nav Goal or programmatically)
 
 ### For Real Robot
 
@@ -157,6 +321,11 @@ Launches only joystick control (when robot is already running).
 - Generate TF tree: `ros2 run tf2_tools view_frames`
 - Check robot_state_publisher is running
 
+### Navigation Goal Not Working
+- Ensure Nav2 is running: `ros2 node list | grep nav2`
+- Check action server: `ros2 action list | grep navigate_to_pose`
+- Verify robot is localized on the map
+
 ---
 
 ## Configuration Files
@@ -188,6 +357,51 @@ sudo apt install ros-humble-nav2-bringup \
 
 ---
 
+## Visuals
+![Gazebo Simulation](images/gazebo.png)
+![RViz Visualization](images/rviz.png)
+
+---
+
+## (Optional) Using Docker
+This workspace is configured with a DevContainer for easy setup.
+
+### Option 1: VSCode DevContainer (Recommended)
+1. Open the workspace in VSCode.
+2. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac) and select **"Dev Containers: Reopen in Container"**.
+3. VSCode will automatically build the image and set up the environment.
+
+### Option 2: Build and Run Manually
+Since the DevContainer is configured to build from source, you can also build and run the image manually:
+1. Build the image:
+
+```bash
+   docker build \
+  --network=host \
+  --build-arg DOCKER_REPO=osrf/ros \
+  --build-arg ROS_DISTRO=humble \
+  --build-arg IMAGE_SUFFIX=-desktop-full \
+  --build-arg USERNAME=$(whoami) \
+  --build-arg USER_UID=$(id -u) \
+  --build-arg USER_GID=$(id -g) \
+  -t test_nav2:latest \
+  -f .devcontainer/Dockerfile .
+```
+
+2. Run the container:
+
+```bash
+   docker run -it --rm --net=host \
+  -e DISPLAY=$DISPLAY \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -v $(pwd):/home/steve_ros2_ws \
+  -v ~/.ssh:/home/$(whoami)/.ssh \
+  -w /home/steve_ros2_ws \
+  test_nav2:latest
+```
+
+---
+
 ## Support
 
 For issues or questions:
@@ -198,3 +412,9 @@ For issues or questions:
 
 ---
 
+For more details, see the [Neobotix ROS2 simulation documentation](https://neobotix-docs.de/ros/ros2/simulation_classic.html) and the [modern Gazebo migration guide](https://neobotix-docs.de/ros/ros2/simulation_modern.html).
+
+---
+Since the classic gazebo has reached End of Life, There will be no further updates to this packages. 
+
+All the robots in this packages have been migrated to modern Gazebo with some more additional features. More information about the installation and usage of the new modern Gazebo simulation can be [found in our documentation.](https://neobotix-docs.de/ros/ros2/simulation_modern.html)

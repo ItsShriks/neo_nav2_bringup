@@ -41,7 +41,8 @@ def launch_setup(context: LaunchContext, world_arg, map_arg):
             'world': world,
             'use_sim_time': 'true',
             'arm_type': 'ur5e',
-            'include_pan_tilt': 'true'
+            'include_pan_tilt': 'true',
+            'use_rviz': 'false'  # Disable simulation RViz, use navigation RViz instead
         }.items()
     )
 
@@ -65,7 +66,7 @@ def launch_setup(context: LaunchContext, world_arg, map_arg):
         launch_arguments={
             'use_sim_time': 'true',
             'params_file': os.path.join(get_package_share_directory('neo_nav2_bringup'), 'config', 'navigation.yaml'),
-            'use_rviz': 'False'
+            'use_rviz': 'True'  # Enable navigation RViz for visualization
         }.items()
     )
 

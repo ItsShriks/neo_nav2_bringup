@@ -45,28 +45,28 @@ We provide multiple launch files for different use cases:
 #### Quick Start: Full Navigation Stack (Recommended)
 Launch everything (simulation + localization + navigation) with a single command:
 ```bash
-ros2 launch steve_navigation localization_simulation.launch.py
+ros2 launch steve_navigation localization.launch.py use_sim_time:=true
 ```
 
 This automatically starts:
 - Gazebo simulation with MMO-700 robot (UR5e arm + pan-tilt camera)
-- AMCL localization with pre-built map
+- AMCL localization with pre-built map (auto-detected from world)
 - Nav2 autonomous navigation stack
 - RViz for visualization
 
 **Using a custom map:**
 ```bash
-ros2 launch steve_navigation localization_simulation.launch.py map:=/path/to/your/map.yaml
+ros2 launch steve_navigation localization.launch.py use_sim_time:=true map:=/path/to/your/map.yaml
 ```
 
 **Using a different world:**
 ```bash
-ros2 launch steve_navigation localization_simulation.launch.py world:=neo_track1
+ros2 launch steve_navigation localization.launch.py use_sim_time:=true world:=neo_track1
 ```
 
 **Using custom world and map:**
 ```bash
-ros2 launch steve_navigation localization_simulation.launch.py \
+ros2 launch steve_navigation localization.launch.py use_sim_time:=true \
   world:=/path/to/custom.world \
   map:=/path/to/custom_map.yaml
 ```
@@ -75,12 +75,12 @@ ros2 launch steve_navigation localization_simulation.launch.py \
 
 If you want to create a new map instead of using a pre-built one:
 ```bash
-ros2 launch steve_navigation slam_simulation.launch.py
+ros2 launch steve_navigation slam.launch.py use_sim_time:=true
 ```
 
 **Using a different world for SLAM:**
 ```bash
-ros2 launch steve_navigation slam_simulation.launch.py world:=neo_track1
+ros2 launch steve_navigation slam.launch.py use_sim_time:=true world:=neo_track1
 ```
 
 Then in a **separate terminal**, launch navigation:
@@ -213,9 +213,14 @@ Initializes all robot hardware:
 
 ### 2. SLAM (Real Robot)
 ```bash
-ros2 launch steve_navigation slam.launch.py
+ros2 launch steve_navigation slam.launch.py use_sim_time:=false
 ```
 Brings up hardware + SLAM for creating new maps.
+
+**With RViz enabled:**
+```bash
+ros2 launch steve_navigation slam.launch.py use_sim_time:=false use_rviz:=true
+```
 
 **Save map after building:**
 ```bash
@@ -224,22 +229,24 @@ ros2 run nav2_map_server map_saver_cli -f ~/maps/my_map
 
 ### 3. Localization (Real Robot)
 ```bash
-ros2 launch steve_navigation localization.launch.py map:=/path/to/map.yaml
+ros2 launch steve_navigation localization.launch.py use_sim_time:=false map:=/path/to/map.yaml
 ```
 Brings up hardware + localization + navigation with existing map.
 
 **Example:**
 ```bash
-ros2 launch steve_navigation localization.launch.py \
+ros2 launch steve_navigation localization.launch.py use_sim_time:=false \
     map:=~/maps/my_map.yaml \
     use_rviz:=true
 ```
 
 ### 4. Standalone Joystick Control
+Joystick control is integrated into `robot_bringup.launch.py` and can be enabled/disabled with the `enable_joystick` parameter.
+
+To disable joystick:
 ```bash
-ros2 launch steve_navigation teleop.launch.py
+ros2 launch steve_navigation slam.launch.py use_sim_time:=false enable_joystick:=false
 ```
-Launches only joystick control (when robot is already running).
 
 ---
 
@@ -248,7 +255,7 @@ Launches only joystick control (when robot is already running).
 ### For Simulation
 1. Launch localization simulation:
    ```bash
-   ros2 launch steve_navigation localization_simulation.launch.py
+   ros2 launch steve_navigation localization.launch.py use_sim_time:=true
    ```
 2. Set initial pose in RViz (2D Pose Estimate)
 3. Send navigation goals (2D Nav Goal or programmatically)
@@ -258,7 +265,7 @@ Launches only joystick control (when robot is already running).
 #### First Time - Build a Map
 1. Launch SLAM:
    ```bash
-   ros2 launch steve_navigation slam.launch.py
+   ros2 launch steve_navigation slam.launch.py use_sim_time:=false
    ```
 2. Drive robot around with joystick (hold LB + left stick)
 3. Save map:
@@ -269,7 +276,7 @@ Launches only joystick control (when robot is already running).
 #### Normal Operation - Navigate with Map
 1. Launch localization:
    ```bash
-   ros2 launch steve_navigation localization.launch.py \
+   ros2 launch steve_navigation localization.launch.py use_sim_time:=false \
        map:=~/maps/my_map.yaml \
        use_rviz:=true
    ```
@@ -293,9 +300,10 @@ Launches only joystick control (when robot is already running).
 
 | Feature | Simulation | Real Robot |
 |---------|-----------|------------|
-| Launch file suffix | `_simulation.launch.py` | `.launch.py` |
-| `use_sim_time` | `true` | `false` |
-| Hardware bringup | Gazebo | `robot_bringup.launch.py` |
+| `use_sim_time` parameter | `true` | `false` |
+| Hardware bringup | Gazebo (automatic) | `robot_bringup.launch.py` (automatic) |
+| Map requirement | Auto-detected from world | Required via `map` parameter |
+| RViz default | Auto-enabled | Disabled (use `use_rviz:=true`) |
 | Initialization delays | None | 5s, 10s for hardware |
 
 ---
@@ -340,7 +348,7 @@ Launches only joystick control (when robot is already running).
 ## Dependencies
 
 ### Required Packages
-- `neo_mpo_700-2` - Base platform drivers
+- `steve_hardware_bringup` - Hardware initialization and component drivers
 - `realsense2_camera` - RealSense camera driver
 - `nav2_bringup` - Nav2 navigation stack
 - `slam_toolbox` - SLAM implementation

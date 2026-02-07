@@ -4,7 +4,7 @@
   <name>steve_navigation</name>
   <version>1.0.3</version>
   <description>ROS-2 navigation bringup packages for neobotix robots</description>
-  <maintainer email="padmanabhan@neobotix.de">Pradheep Padmanabhan</maintainer>
+  <maintainer email="nakhyeshrikar@icloud.com">ItsShriks</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
@@ -12,6 +12,7 @@
 
   <depend>nav2_common</depend>
   <depend>slam_toolbox</depend>
+  <exec_depend>steve_hardware_bringup</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

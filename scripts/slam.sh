@@ -1,0 +1,1 @@
+colcon build --symlink-install && source install/setup.bash && ros2 launch steve_navigation slam.launch.py use_sim_time:=true

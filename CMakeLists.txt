@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(neo_nav2_bringup)
+project(steve_navigation)
 
 find_package(ament_cmake REQUIRED)
 

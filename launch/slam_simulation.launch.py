@@ -1,58 +1,74 @@
 import os
+
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+
 
 def generate_launch_description():
     ld = LaunchDescription()
 
     # Declare world argument
     declare_world_arg = DeclareLaunchArgument(
-        'world',
-        default_value='small_house',
-        description='World to load in Gazebo. Available: "neo_workshop", "neo_track1", "small_house", or full path to .world file'
+        "world",
+        default_value="small_house",
+        description='World to load in Gazebo. Available: "neo_workshop", "neo_track1", "small_house", or full path to .world file',
     )
 
     # Launch Simulation
     simulation_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(get_package_share_directory('neo_simulation2'), 'launch', 'simulation.launch.py')
+            os.path.join(
+                get_package_share_directory("steve_simulation"),
+                "launch",
+                "simulation.launch.py",
+            )
         ),
         launch_arguments={
-            'my_robot': 'mmo_700',
-            'world': LaunchConfiguration('world'),
-            'use_sim_time': 'true',
-            'arm_type': 'ur5e',
-            'include_pan_tilt': 'true'
-            
-        }.items()
+            "my_robot": "mmo_700",
+            "world": LaunchConfiguration("world"),
+            "use_sim_time": "true",
+            "arm_type": "ur5e",
+            "include_pan_tilt": "true",
+        }.items(),
     )
 
     # Launch SLAM
     mapping_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(get_package_share_directory('neo_nav2_bringup'), 'launch', 'mapping.launch.py')
+            os.path.join(
+                get_package_share_directory("steve_navigation"),
+                "launch",
+                "mapping.launch.py",
+            )
         ),
         launch_arguments={
-            'use_sim_time': 'true',
-            'param_file': os.path.join(get_package_share_directory('neo_nav2_bringup'), 'config', 'mapping.yaml')
-        }.items()
+            "use_sim_time": "true",
+            "param_file": os.path.join(
+                get_package_share_directory("steve_navigation"),
+                "config",
+                "mapping.yaml",
+            ),
+        }.items(),
     )
 
     # Launch RViz with SLAM-specific configuration
     rviz_node = Node(
-        package='rviz2',
-        executable='rviz2',
-        name='rviz2',
-        arguments=['-d', os.path.join(
-            get_package_share_directory('neo_nav2_bringup'),
-            'rviz',
-            'slam_rviz.rviz'
-        )],
-        parameters=[{'use_sim_time': True}]
+        package="rviz2",
+        executable="rviz2",
+        name="rviz2",
+        arguments=[
+            "-d",
+            os.path.join(
+                get_package_share_directory("steve_navigation"),
+                "rviz",
+                "slam_rviz.rviz",
+            ),
+        ],
+        parameters=[{"use_sim_time": True}],
     )
 
     ld.add_action(declare_world_arg)
@@ -61,4 +77,3 @@ def generate_launch_description():
     ld.add_action(rviz_node)
 
     return ld
-

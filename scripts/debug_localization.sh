@@ -27,7 +27,7 @@ echo "========================================="
 echo "Step 1: Checking Map Files"
 echo "========================================="
 
-MAP_DIR="/Users/shrikar/neo_700/steve_ros2_ws/src/neo_simulation2/maps"
+MAP_DIR="/Users/shrikar/neo_700/steve_ros2_ws/src/steve_simulation/maps"
 MAPS=("small_house" "neo_workshop" "neo_track1")
 
 for map in "${MAPS[@]}"; do
@@ -66,7 +66,7 @@ for node in "${LIFECYCLE_NODES[@]}"; do
     if ros2 node list 2>/dev/null | grep -q "/${node}"; then
         state=$(ros2 lifecycle get /${node} 2>/dev/null | grep -oP '\[\K[0-9]+' | head -1)
         state_name=$(ros2 lifecycle get /${node} 2>/dev/null | grep -oP '^[a-z]+')
-        
+
         if [ "$state" == "3" ]; then
             echo -e "${GREEN}✓ /${node}: ${state_name} [${state}]${NC}"
         else
@@ -128,10 +128,10 @@ if ros2 node list 2>/dev/null | grep -q "/map_server"; then
     echo "Map Server Parameters:"
     yaml_file=$(ros2 param get /map_server yaml_filename 2>/dev/null | grep -oP 'String value is: \K.*')
     use_sim_time=$(ros2 param get /map_server use_sim_time 2>/dev/null | grep -oP 'Boolean value is: \K.*')
-    
+
     echo "  yaml_filename: ${yaml_file}"
     echo "  use_sim_time: ${use_sim_time}"
-    
+
     # Check if file exists
     if [ -f "${yaml_file}" ]; then
         echo -e "${GREEN}  ✓ Map file exists${NC}"
@@ -187,7 +187,7 @@ echo "========================================="
 
 if ros2 topic list 2>/dev/null | grep -q "/clock"; then
     echo -e "${GREEN}✓ /clock topic available (simulation time)${NC}"
-    
+
     # Check use_sim_time for critical nodes
     for node in "/map_server" "/amcl"; do
         if ros2 node list 2>/dev/null | grep -q "$node"; then

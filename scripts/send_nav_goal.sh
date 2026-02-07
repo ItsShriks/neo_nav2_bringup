@@ -19,4 +19,4 @@ echo "Sending navigation goal:"
 echo "  Position: ($X, $Y) m"
 echo "  Orientation: $YAW_DEG° ($YAW_RAD rad)"
 
-ros2 run neo_nav2_bringup nav2_navigator.py --x $X --y $Y --yaw $YAW_RAD
+ros2 run steve_navigation nav2_navigator.py --x $X --y $Y --yaw $YAW_RAD

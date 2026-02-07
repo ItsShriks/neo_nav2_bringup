@@ -1,4 +1,4 @@
-# neo_nav2_bringup
+# steve_navigation
 
 Common Nav2 bringup package for Neobotix robots, supporting both simulation and real hardware.
 
@@ -10,7 +10,7 @@ This package provides launch files for:
 
 ## Documentation
 
-Official documentation: https://neobotix-docs.de/ros/packages/neo_nav2_bringup.html
+Official documentation: https://neobotix-docs.de/ros/packages/steve_navigation.html
 
 ---
 
@@ -24,7 +24,7 @@ git clone --recurse-submodules git@gitlab.igg.uni-bonn.de:hrl_students/ws2526_bu
 ### 2. Build the workspace
 ```bash
 source /opt/ros/humble/setup.bash
-colcon build --symlink-install --packages-select neo_simulation2 neo_nav2_bringup
+colcon build --symlink-install --packages-select steve_simulation steve_navigation
 ```
 
 ### 3. Source the workspace
@@ -35,7 +35,7 @@ source install/setup.bash
 ### 4. Launch the simulation
 Basic launch:
 ```bash
-ros2 launch neo_simulation2 simulation.launch.py
+ros2 launch steve_simulation simulation.launch.py
 ```
 
 ### 5. Navigation and Mapping
@@ -45,7 +45,7 @@ We provide multiple launch files for different use cases:
 #### Quick Start: Full Navigation Stack (Recommended)
 Launch everything (simulation + localization + navigation) with a single command:
 ```bash
-ros2 launch neo_nav2_bringup localization_simulation.launch.py
+ros2 launch steve_navigation localization_simulation.launch.py
 ```
 
 This automatically starts:
@@ -56,17 +56,17 @@ This automatically starts:
 
 **Using a custom map:**
 ```bash
-ros2 launch neo_nav2_bringup localization_simulation.launch.py map:=/path/to/your/map.yaml
+ros2 launch steve_navigation localization_simulation.launch.py map:=/path/to/your/map.yaml
 ```
 
 **Using a different world:**
 ```bash
-ros2 launch neo_nav2_bringup localization_simulation.launch.py world:=neo_track1
+ros2 launch steve_navigation localization_simulation.launch.py world:=neo_track1
 ```
 
 **Using custom world and map:**
 ```bash
-ros2 launch neo_nav2_bringup localization_simulation.launch.py \
+ros2 launch steve_navigation localization_simulation.launch.py \
   world:=/path/to/custom.world \
   map:=/path/to/custom_map.yaml
 ```
@@ -75,18 +75,18 @@ ros2 launch neo_nav2_bringup localization_simulation.launch.py \
 
 If you want to create a new map instead of using a pre-built one:
 ```bash
-ros2 launch neo_nav2_bringup slam_simulation.launch.py
+ros2 launch steve_navigation slam_simulation.launch.py
 ```
 
 **Using a different world for SLAM:**
 ```bash
-ros2 launch neo_nav2_bringup slam_simulation.launch.py world:=neo_track1
+ros2 launch steve_navigation slam_simulation.launch.py world:=neo_track1
 ```
 
 Then in a **separate terminal**, launch navigation:
 ```bash
 source install/setup.bash
-ros2 launch neo_nav2_bringup navigation_neo.launch.py use_sim_time:=true use_rviz:=false
+ros2 launch steve_navigation navigation_neo.launch.py use_sim_time:=true use_rviz:=false
 ```
 
 This starts:
@@ -123,16 +123,16 @@ Send navigation goals programmatically via command line or Python API.
 
 ```bash
 # Navigate to specific coordinates (x, y, yaw in radians)
-ros2 run neo_nav2_bringup nav2_navigator.py --x 2.0 --y 1.5 --yaw 1.57
+ros2 run steve_navigation nav2_navigator.py --x 2.0 --y 1.5 --yaw 1.57
 
 # Navigate to origin
-ros2 run neo_nav2_bringup nav2_navigator.py --x 0.0 --y 0.0 --yaw 0.0
+ros2 run steve_navigation nav2_navigator.py --x 0.0 --y 0.0 --yaw 0.0
 
 # Non-blocking mode (send goal and return immediately)
-ros2 run neo_nav2_bringup nav2_navigator.py --x 3.0 --y 2.0 --yaw 0.0 --no-wait
+ros2 run steve_navigation nav2_navigator.py --x 3.0 --y 2.0 --yaw 0.0 --no-wait
 
 # Use degrees with convenience script
-./src/neo_nav2_bringup/scripts/send_nav_goal.sh 2.0 1.5 90
+./src/steve_navigation/scripts/send_nav_goal.sh 2.0 1.5 90
 ```
 
 ### Python API Usage
@@ -172,7 +172,7 @@ SCENE_GRAPH = {
 def navigate_to_location(location_name: str):
     pose = SCENE_GRAPH[location_name]
     cmd = [
-        "ros2", "run", "neo_nav2_bringup", "nav2_navigator.py",
+        "ros2", "run", "steve_navigation", "nav2_navigator.py",
         "--x", str(pose["x"]),
         "--y", str(pose["y"]),
         "--yaw", str(pose["yaw"])
@@ -198,7 +198,7 @@ navigate_to_location("kitchen")
 
 ### 1. Hardware Bringup Only
 ```bash
-ros2 launch neo_nav2_bringup robot_bringup.launch.py
+ros2 launch steve_navigation robot_bringup.launch.py
 ```
 Initializes all robot hardware:
 - Base platform (CAN drivers, motors, IMU, LiDARs)
@@ -213,7 +213,7 @@ Initializes all robot hardware:
 
 ### 2. SLAM (Real Robot)
 ```bash
-ros2 launch neo_nav2_bringup slam.launch.py
+ros2 launch steve_navigation slam.launch.py
 ```
 Brings up hardware + SLAM for creating new maps.
 
@@ -224,20 +224,20 @@ ros2 run nav2_map_server map_saver_cli -f ~/maps/my_map
 
 ### 3. Localization (Real Robot)
 ```bash
-ros2 launch neo_nav2_bringup localization.launch.py map:=/path/to/map.yaml
+ros2 launch steve_navigation localization.launch.py map:=/path/to/map.yaml
 ```
 Brings up hardware + localization + navigation with existing map.
 
 **Example:**
 ```bash
-ros2 launch neo_nav2_bringup localization.launch.py \
+ros2 launch steve_navigation localization.launch.py \
     map:=~/maps/my_map.yaml \
     use_rviz:=true
 ```
 
 ### 4. Standalone Joystick Control
 ```bash
-ros2 launch neo_nav2_bringup teleop.launch.py
+ros2 launch steve_navigation teleop.launch.py
 ```
 Launches only joystick control (when robot is already running).
 
@@ -248,7 +248,7 @@ Launches only joystick control (when robot is already running).
 ### For Simulation
 1. Launch localization simulation:
    ```bash
-   ros2 launch neo_nav2_bringup localization_simulation.launch.py
+   ros2 launch steve_navigation localization_simulation.launch.py
    ```
 2. Set initial pose in RViz (2D Pose Estimate)
 3. Send navigation goals (2D Nav Goal or programmatically)
@@ -258,7 +258,7 @@ Launches only joystick control (when robot is already running).
 #### First Time - Build a Map
 1. Launch SLAM:
    ```bash
-   ros2 launch neo_nav2_bringup slam.launch.py
+   ros2 launch steve_navigation slam.launch.py
    ```
 2. Drive robot around with joystick (hold LB + left stick)
 3. Save map:
@@ -269,7 +269,7 @@ Launches only joystick control (when robot is already running).
 #### Normal Operation - Navigate with Map
 1. Launch localization:
    ```bash
-   ros2 launch neo_nav2_bringup localization.launch.py \
+   ros2 launch steve_navigation localization.launch.py \
        map:=~/maps/my_map.yaml \
        use_rviz:=true
    ```

@@ -153,20 +153,20 @@ controller_server:
       movement_time_allowance: 100.0
     general_goal_checker:
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.5
-      yaw_goal_tolerance: 0.5
+      xy_goal_tolerance: 0.15
+      yaw_goal_tolerance: 0.20
       stateful: True
     FollowPath:
       plugin: "dwb_core::DWBLocalPlanner"
       debug_trajectory_details: True
-      min_vel_x: -0.2
-      max_vel_x: 0.06
-      min_vel_y: -0.25
-      max_vel_y: 0.06
-      max_vel_theta: 0.3
-      min_speed_xy: 0.05
-      max_speed_xy: 0.06
-      min_speed_theta: 0.08
+      min_vel_x: -0.3
+      max_vel_x: 0.3
+      min_vel_y: -0.3
+      max_vel_y: 0.3
+      max_vel_theta: 0.6
+      min_speed_xy: 0.0
+      max_speed_xy: 0.3
+      min_speed_theta: 0.1
       acc_lim_x: 2.5
       acc_lim_y: 2.5
       acc_lim_theta: 3.2
@@ -186,14 +186,14 @@ controller_server:
       stateful: True
       critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
       BaseObstacle.scale: 0.05
-      PathAlign.scale: 64.0
+      PathAlign.scale: 48.0
       PathAlign.forward_point_distance: 0.1
-      GoalAlign.scale: 24.0
+      GoalAlign.scale: 32.0
       GoalAlign.forward_point_distance: 0.1
       PathDist.scale: 32.0
-      GoalDist.scale: 24.0
-      RotateToGoal.scale: 100.0
-      RotateToGoal.slowing_factor: 5.0
+      GoalDist.scale: 28.0
+      RotateToGoal.scale: 120.0
+      RotateToGoal.slowing_factor: 3.0
       RotateToGoal.lookahead_time: -1.0
 
 local_costmap:
@@ -214,8 +214,8 @@ local_costmap:
       plugins: ["obstacle_layer", "inflation_layer"]
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 2.5
-        inflation_radius: 0.55
+        cost_scaling_factor: 3.0
+        inflation_radius: 0.75
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
@@ -282,8 +282,8 @@ global_costmap:
         map_subscribe_transient_local: True
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 2.5
-        inflation_radius: 0.55
+        cost_scaling_factor: 3.0
+        inflation_radius: 0.75
       always_send_full_costmap: True
 
 map_server:
@@ -326,9 +326,9 @@ behavior_server:
     transform_timeout: 1.0
     use_sim_time: true
     simulate_ahead_time: 2.0
-    max_rotational_vel: 0.5
-    min_rotational_vel: 0.3
-    rotational_acc_lim: 0.8
+    max_rotational_vel: 0.6
+    min_rotational_vel: 0.2
+    rotational_acc_lim: 1.0
 
 waypoint_follower:
   ros__parameters:

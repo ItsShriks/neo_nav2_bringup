@@ -66,13 +66,27 @@ def launch_setup(context: LaunchContext, world_arg, map_arg):
         launch_arguments={
             'use_sim_time': 'true',
             'params_file': os.path.join(get_package_share_directory('neo_nav2_bringup'), 'config', 'navigation.yaml'),
-            'use_rviz': 'True'  # Enable navigation RViz for visualization
+            'use_rviz': 'False'  # Disable navigation RViz, use dedicated localization RViz instead
         }.items()
+    )
+
+    # Launch RViz with localization-specific configuration
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        arguments=['-d', os.path.join(
+            get_package_share_directory('neo_nav2_bringup'),
+            'rviz',
+            'localization_rviz.rviz'
+        )],
+        parameters=[{'use_sim_time': True}]
     )
 
     launch_actions.append(simulation_launch)
     launch_actions.append(localization_launch)
     launch_actions.append(navigation_launch)
+    launch_actions.append(rviz_node)
     
     return launch_actions
 

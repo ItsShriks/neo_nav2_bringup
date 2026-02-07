@@ -42,8 +42,23 @@ def generate_launch_description():
         }.items()
     )
 
+    # Launch RViz with SLAM-specific configuration
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        arguments=['-d', os.path.join(
+            get_package_share_directory('neo_nav2_bringup'),
+            'rviz',
+            'slam_rviz.rviz'
+        )],
+        parameters=[{'use_sim_time': True}]
+    )
+
     ld.add_action(declare_world_arg)
     ld.add_action(simulation_launch)
     ld.add_action(mapping_launch)
+    ld.add_action(rviz_node)
 
     return ld
+

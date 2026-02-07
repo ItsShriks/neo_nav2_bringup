@@ -132,13 +132,7 @@ def launch_setup(context: LaunchContext, use_sim_time_arg, world_arg, map_arg):
             ),
         ],
         parameters=[{"use_sim_time": use_sim_time == "true"}],
-        condition=IfCondition(
-            PythonExpression([
-                "'", LaunchConfiguration("use_rviz"), "' == 'true' or ",
-                "('", LaunchConfiguration("use_rviz"), "' == 'auto' and ",
-                "'", use_sim_time, "' == 'true')"
-            ])
-        ),
+        condition=IfCondition(LaunchConfiguration("use_rviz")),
     )
 
     launch_actions.append(localization_launch)
@@ -213,8 +207,8 @@ def generate_launch_description():
 
     declare_use_rviz_arg = DeclareLaunchArgument(
         "use_rviz",
-        default_value="auto",
-        description="Launch RViz (auto: true for sim, false for real robot)",
+        default_value="true",
+        description="Launch RViz for visualization",
     )
 
     use_sim_time_arg = LaunchConfiguration("use_sim_time")

@@ -67,8 +67,8 @@ def generate_launch_description():
 
     declare_use_rviz_arg = DeclareLaunchArgument(
         "use_rviz",
-        default_value="auto",
-        description="Launch RViz (auto: true for sim, false for real robot)",
+        default_value="true",
+        description="Launch RViz for visualization",
     )
 
     # --- 1. SIMULATION BRINGUP (only if use_sim_time=true) ---
@@ -142,13 +142,7 @@ def generate_launch_description():
             ),
         ],
         parameters=[{"use_sim_time": LaunchConfiguration("use_sim_time")}],
-        condition=IfCondition(
-            PythonExpression([
-                "'", LaunchConfiguration("use_rviz"), "' == 'true' or ",
-                "('", LaunchConfiguration("use_rviz"), "' == 'auto' and ",
-                "'", LaunchConfiguration("use_sim_time"), "' == 'true')"
-            ])
-        ),
+        condition=IfCondition(LaunchConfiguration("use_rviz")),
     )
 
     # --- ADD ALL ACTIONS ---

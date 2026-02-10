@@ -21,8 +21,41 @@ def launch_setup(context: LaunchContext, use_sim_time_arg, world_arg, map_arg):
     world = world_arg.perform(context)
     map_path = map_arg.perform(context)
 
+    print(f"[DEBUG] use_sim_time: '{use_sim_time}' (Type: {type(use_sim_time)})")
+
+    # Normalize boolean string
+    is_sim = use_sim_time.lower() == "true"
+
+    # If map is provided but is just a name (not a path/file that exists), try to find it
+    if map_path and not os.path.exists(map_path):
+        try:
+            # Check if it's in steve_simulation/maps
+            sim_pkg_share = get_package_share_directory("steve_simulation")
+            potential_map = os.path.join(sim_pkg_share, "maps", f"{map_path}.yaml")
+            
+            if os.path.exists(potential_map):
+                print(f"[INFO] Auto-resolved map '{map_path}' to: {potential_map}")
+                map_path = potential_map
+            else:
+                # Try without .yaml extension in case user didn't provide it but file has it
+                # or if user provided it but we constructed double .yaml above
+                # Let's be robust:
+                # 1. Try name as is in maps dir
+                potential_map_asis = os.path.join(sim_pkg_share, "maps", map_path)
+                if os.path.exists(potential_map_asis):
+                     print(f"[INFO] Auto-resolved map '{map_path}' to: {potential_map_asis}")
+                     map_path = potential_map_asis
+                # 2. Try adding .yaml if not present
+                elif not map_path.endswith('.yaml'):
+                     potential_map_yaml = os.path.join(sim_pkg_share, "maps", f"{map_path}.yaml")
+                     if os.path.exists(potential_map_yaml):
+                         print(f"[INFO] Auto-resolved map '{map_path}' to: {potential_map_yaml}")
+                         map_path = potential_map_yaml
+        except Exception as e:
+            print(f"[WARN] Could not resolve map path for '{map_path}': {e}")
+
     # If map is not explicitly provided AND we're in simulation, derive it from world name
-    if map_path == "" and use_sim_time == "true":
+    if is_sim and map_path == "":
         # Extract world name if it's a built-in world
         if world in ["neo_workshop", "neo_track1", "small_house"]:
             world_name = world
@@ -31,15 +64,18 @@ def launch_setup(context: LaunchContext, use_sim_time_arg, world_arg, map_arg):
             world_name = os.path.splitext(os.path.basename(world))[0]
 
         # Construct map path
-        map_path = os.path.join(
-            get_package_share_directory("steve_simulation"),
-            "maps",
-            f"{world_name}.yaml",
-        )
-        print(f"[INFO] Auto-detected map file: {map_path}")
+        try:
+            map_path = os.path.join(
+                get_package_share_directory("steve_simulation"),
+                "maps",
+                f"{world_name}.yaml",
+            )
+            print(f"[INFO] Auto-detected map file for simulation: {map_path}")
+        except Exception as e:
+            print(f"[WARN] Could not auto-detect map for simulation: {e}")
 
     # --- 1. SIMULATION BRINGUP (only if use_sim_time=true) ---
-    if use_sim_time == "true":
+    if is_sim:
         simulation_launch = IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 os.path.join(
@@ -55,6 +91,7 @@ def launch_setup(context: LaunchContext, use_sim_time_arg, world_arg, map_arg):
                 "arm_type": LaunchConfiguration("arm_type"),
                 "include_pan_tilt": "true",
                 "use_rviz": "false",  # We'll launch our own RViz with localization config
+                "launch_map_server": "false",
             }.items(),
         )
         launch_actions.append(simulation_launch)
@@ -131,7 +168,7 @@ def launch_setup(context: LaunchContext, use_sim_time_arg, world_arg, map_arg):
                 "localization_rviz.rviz",
             ),
         ],
-        parameters=[{"use_sim_time": use_sim_time == "true"}],
+        parameters=[{"use_sim_time": is_sim}],
         condition=IfCondition(LaunchConfiguration("use_rviz")),
     )
 

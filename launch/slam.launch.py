@@ -1,12 +1,112 @@
 import os
 
 from ament_index_python.packages import get_package_share_directory
-from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
-from launch.conditions import IfCondition, UnlessCondition
+from launch import LaunchContext, LaunchDescription
+from launch.actions import (
+    DeclareLaunchArgument,
+    IncludeLaunchDescription,
+    OpaqueFunction,
+)
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+
+
+def launch_setup(context: LaunchContext, use_sim_time_arg, world_arg):
+    """Setup function to dynamically launch appropriate components based on use_sim_time"""
+    launch_actions = []
+
+    use_sim_time = use_sim_time_arg.perform(context)
+    world = world_arg.perform(context)
+
+    print(
+        f"[DEBUG] SLAM Launch - use_sim_time: '{use_sim_time}' (Type: {type(use_sim_time)})"
+    )
+
+    # Normalize boolean string
+    is_sim = use_sim_time.lower() == "true"
+
+    # --- 1. SIMULATION BRINGUP (only if use_sim_time=true) ---
+    if is_sim:
+        simulation_launch = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(
+                    get_package_share_directory("steve_simulation"),
+                    "launch",
+                    "simulation.launch.py",
+                )
+            ),
+            launch_arguments={
+                "my_robot": "mmo_700",
+                "world": world,
+                "use_sim_time": "true",
+                "arm_type": LaunchConfiguration("arm_type"),
+                "include_pan_tilt": "true",
+                "use_rviz": "false",  # We'll launch our own RViz with SLAM config
+                "launch_map_server": "false",
+            }.items(),
+        )
+        launch_actions.append(simulation_launch)
+
+    # --- 2. REAL ROBOT HARDWARE BRINGUP (only if use_sim_time=false) ---
+    else:
+        robot_bringup_launch = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(
+                    get_package_share_directory("steve_navigation"),
+                    "launch",
+                    "robot_bringup.launch.py",
+                )
+            ),
+            launch_arguments={
+                "arm_type": LaunchConfiguration("arm_type"),
+                "enable_camera": LaunchConfiguration("enable_camera"),
+                "enable_joystick": LaunchConfiguration("enable_joystick"),
+            }.items(),
+        )
+        launch_actions.append(robot_bringup_launch)
+
+    # --- 3. SLAM / MAPPING ---
+    slam_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory("steve_navigation"),
+                "launch",
+                "mapping.launch.py",
+            )
+        ),
+        launch_arguments={
+            "use_sim_time": use_sim_time,
+            "param_file": os.path.join(
+                get_package_share_directory("steve_navigation"),
+                "config",
+                "mapping.yaml",
+            ),
+        }.items(),
+    )
+    launch_actions.append(slam_launch)
+
+    # --- 4. RVIZ ---
+    # Launch RViz if use_rviz=true OR (use_rviz=auto AND use_sim_time=true)
+    rviz_node = Node(
+        package="rviz2",
+        executable="rviz2",
+        name="rviz2",
+        arguments=[
+            "-d",
+            os.path.join(
+                get_package_share_directory("steve_navigation"),
+                "rviz",
+                "slam_rviz.rviz",
+            ),
+        ],
+        parameters=[{"use_sim_time": is_sim}],
+        condition=IfCondition(LaunchConfiguration("use_rviz")),
+    )
+    launch_actions.append(rviz_node)
+
+    return launch_actions
 
 
 def generate_launch_description():
@@ -71,81 +171,9 @@ def generate_launch_description():
         description="Launch RViz for visualization",
     )
 
-    # --- 1. SIMULATION BRINGUP (only if use_sim_time=true) ---
-    simulation_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(
-                get_package_share_directory("steve_simulation"),
-                "launch",
-                "simulation.launch.py",
-            )
-        ),
-        launch_arguments={
-            "my_robot": "mmo_700",
-            "world": LaunchConfiguration("world"),
-            "use_sim_time": "true",
-            "arm_type": LaunchConfiguration("arm_type"),
-            "include_pan_tilt": "true",
-            "use_rviz": "false",  # We'll launch our own RViz with SLAM config
-        }.items(),
-        condition=IfCondition(LaunchConfiguration("use_sim_time")),
-    )
+    use_sim_time_arg = LaunchConfiguration("use_sim_time")
+    world_arg = LaunchConfiguration("world")
 
-    # --- 2. REAL ROBOT HARDWARE BRINGUP (only if use_sim_time=false) ---
-    robot_bringup_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(
-                get_package_share_directory("steve_navigation"),
-                "launch",
-                "robot_bringup.launch.py",
-            )
-        ),
-        launch_arguments={
-            "arm_type": LaunchConfiguration("arm_type"),
-            "enable_camera": LaunchConfiguration("enable_camera"),
-            "enable_joystick": LaunchConfiguration("enable_joystick"),
-        }.items(),
-        condition=UnlessCondition(LaunchConfiguration("use_sim_time")),
-    )
-
-    # --- 3. SLAM / MAPPING ---
-    slam_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(
-                get_package_share_directory("steve_navigation"),
-                "launch",
-                "mapping.launch.py",
-            )
-        ),
-        launch_arguments={
-            "use_sim_time": LaunchConfiguration("use_sim_time"),
-            "param_file": os.path.join(
-                get_package_share_directory("steve_navigation"),
-                "config",
-                "mapping.yaml",
-            ),
-        }.items(),
-    )
-
-    # --- 4. RVIZ ---
-    # Launch RViz if use_rviz=true OR (use_rviz=auto AND use_sim_time=true)
-    rviz_node = Node(
-        package="rviz2",
-        executable="rviz2",
-        name="rviz2",
-        arguments=[
-            "-d",
-            os.path.join(
-                get_package_share_directory("steve_navigation"),
-                "rviz",
-                "slam_rviz.rviz",
-            ),
-        ],
-        parameters=[{"use_sim_time": LaunchConfiguration("use_sim_time")}],
-        condition=IfCondition(LaunchConfiguration("use_rviz")),
-    )
-
-    # --- ADD ALL ACTIONS ---
     ld.add_action(declare_use_sim_time_arg)
     ld.add_action(declare_world_arg)
     ld.add_action(declare_arm_type_arg)
@@ -153,9 +181,9 @@ def generate_launch_description():
     ld.add_action(declare_enable_joystick_arg)
     ld.add_action(declare_use_rviz_arg)
 
-    ld.add_action(simulation_launch)
-    ld.add_action(robot_bringup_launch)
-    ld.add_action(slam_launch)
-    ld.add_action(rviz_node)
+    # Use OpaqueFunction to dynamically compute map path and launch components
+    ld.add_action(
+        OpaqueFunction(function=launch_setup, args=[use_sim_time_arg, world_arg])
+    )
 
     return ld
